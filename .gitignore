@@ -28,6 +28,38 @@ lerna-debug.log*
 config/local.json
 config/production.json
 config/staging.json
+
+# ============================================
+# SEGURIDAD - CRÍTICO: NUNCA COMMITEAR
+# ============================================
+# Certificados y claves
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+ssl/
+certs/
+certificates/
+
+# Archivos de autenticación
+auth.json
+config/secrets.json
+jwt-secret.txt
+api-keys.txt
+*-token.txt
+*-secret.txt
+
+# Configuraciones NPM sensibles
+.npmrc.local
+.yarnrc
+
+# Reportes de seguridad
+security-report.*
+*-audit.json
+vulnerability-report.*
+*.sarif
+snyk.json
 secrets.json
 
 # ============================================

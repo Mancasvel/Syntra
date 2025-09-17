@@ -1,0 +1,93 @@
+# ============================================
+# SYNTRA - CONFIGURACIÓN DEPENDABOT SECURITY
+# ============================================
+
+version: 2
+updates:
+  # Backend dependencies
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "syntra-team"
+    assignees:
+      - "syntra-team"
+    commit-message:
+      prefix: "security"
+      include: "scope"
+    # Solo vulnerabilidades de seguridad y actualizaciones críticas
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"
+      - dependency-type: "indirect"
+        update-type: "security"
+    ignore:
+      # Ignorar actualizaciones menores de desarrollo
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+        
+  # Frontend dependencies  
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "syntra-team"
+    assignees:
+      - "syntra-team"
+    commit-message:
+      prefix: "security"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"
+      - dependency-type: "indirect"
+        update-type: "security"
+        
+  # Mobile dependencies
+  - package-ecosystem: "npm"
+    directory: "/mobile"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "syntra-team"
+    assignees:
+      - "syntra-team"
+    commit-message:
+      prefix: "security"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"
+      - dependency-type: "indirect"
+        update-type: "security"
+        
+  # Root dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "syntra-team"
+    assignees:
+      - "syntra-team"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"

@@ -1,0 +1,189 @@
+name: 🔒 Security Audit
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Ejecutar auditoría diaria a las 6:00 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Permitir ejecución manual
+
+jobs:
+  security-audit:
+    name: 🛡️ Complete Security Audit
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: 📦 Install root dependencies
+      run: npm ci
+      
+    - name: 🔍 Run custom security audit
+      run: node scripts/security-audit.js
+      
+    - name: 🛡️ NPM Audit Backend
+      working-directory: ./backend
+      run: |
+        npm ci
+        npm audit --audit-level moderate
+        
+    - name: 🛡️ NPM Audit Frontend  
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm audit --audit-level moderate
+        
+    - name: 🛡️ NPM Audit Mobile
+      working-directory: ./mobile
+      run: |
+        npm ci
+        npm audit --audit-level moderate
+        
+    - name: 🔐 Check for known vulnerabilities
+      uses: securecodewarrior/github-action-add-sarif@v1
+      with:
+        sarif-file: 'security-report.sarif'
+      continue-on-error: true
+      
+    - name: 📊 Generate security report
+      run: |
+        echo "# 🔒 Security Audit Report" > security-report.md
+        echo "Date: $(date)" >> security-report.md
+        echo "Node.js: ${{ matrix.node-version }}" >> security-report.md
+        echo "" >> security-report.md
+        echo "## Backend Audit" >> security-report.md
+        cd backend && npm audit --json > ../backend-audit.json || true
+        cd ..
+        echo "## Frontend Audit" >> security-report.md  
+        cd frontend && npm audit --json > ../frontend-audit.json || true
+        cd ..
+        echo "## Mobile Audit" >> security-report.md
+        cd mobile && npm audit --json > ../mobile-audit.json || true
+        cd ..
+        
+    - name: 📤 Upload security artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports-node-${{ matrix.node-version }}
+        path: |
+          security-report.md
+          *-audit.json
+        retention-days: 30
+        
+    - name: 💬 Comment PR with security status
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 🔒 Security Audit Results\n\n';
+          comment += `**Node.js Version:** ${{ matrix.node-version }}\n`;
+          comment += `**Status:** `;
+          
+          try {
+            // Verificar si hay archivos de audit con vulnerabilidades
+            const files = ['backend-audit.json', 'frontend-audit.json', 'mobile-audit.json'];
+            let hasVulns = false;
+            
+            for (const file of files) {
+              if (fs.existsSync(file)) {
+                const audit = JSON.parse(fs.readFileSync(file, 'utf8'));
+                if (audit.metadata && audit.metadata.vulnerabilities.total > 0) {
+                  hasVulns = true;
+                  break;
+                }
+              }
+            }
+            
+            if (hasVulns) {
+              comment += '⚠️ Vulnerabilities found - Review required\n\n';
+              comment += '**Action Required:** Please review the security audit results and update vulnerable dependencies.\n';
+            } else {
+              comment += '✅ No critical vulnerabilities found\n\n';
+              comment += '**Status:** All dependencies are secure.\n';
+            }
+          } catch (error) {
+            comment += '❓ Could not determine security status\n\n';
+          }
+          
+          comment += '\n**Recommendation:** Always run `npm audit fix` after adding new dependencies.';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  dependency-check:
+    name: 🔍 Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Run Snyk to check for vulnerabilities
+      uses: snyk/actions/node@master
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=medium
+        
+    - name: 📊 Upload Snyk results to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: snyk.sarif
+
+  license-check:
+    name: 📄 License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: 📦 Install license-checker
+      run: npm install -g license-checker
+      
+    - name: 🔍 Check Backend Licenses
+      working-directory: ./backend
+      run: |
+        npm ci
+        license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense' --excludePrivatePackages
+        
+    - name: 🔍 Check Frontend Licenses
+      working-directory: ./frontend  
+      run: |
+        npm ci
+        license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense' --excludePrivatePackages
+        
+    - name: 🔍 Check Mobile Licenses
+      working-directory: ./mobile
+      run: |
+        npm ci
+        license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense' --excludePrivatePackages

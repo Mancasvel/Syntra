@@ -28,7 +28,13 @@
     "lint:frontend": "cd frontend && npm run lint",
     "deploy:vercel": "vercel --prod",
     "deploy:staging": "vercel",
-    "setup": "./scripts/setup.sh"
+    "setup": "./scripts/setup.sh",
+    "security:audit": "node scripts/security-audit.js",
+    "security:check": "npm audit --audit-level moderate",
+    "security:fix": "npm audit fix && npm run security:fix:backend && npm run security:fix:frontend && npm run security:fix:mobile",
+    "security:fix:backend": "cd backend && npm audit fix",
+    "security:fix:frontend": "cd frontend && npm audit fix", 
+    "security:fix:mobile": "cd mobile && npm audit fix"
   },
   "keywords": [
     "nfc",
@@ -49,10 +55,15 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "npm run security:check && lint-staged",
+      "pre-push": "npm run security:audit"
     }
   },
   "lint-staged": {
+    "package*.json": [
+      "npm run security:check",
+      "prettier --write"
+    ],
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",
       "prettier --write"
