@@ -1,6 +1,16 @@
-import { PrismaClient } from '@prisma/client';
+import { 
+  User, 
+  DigitalWallet, 
+  TokenPurchase, 
+  TokenTransaction, 
+  FestivalVendor, 
+  FestivalSpending, 
+  NFCDevice,
+  Event 
+} from '@/models';
 import { revenueCatService } from './revenueCatService';
 import { logger } from '@/utils/logger';
+import mongoose from 'mongoose';
 
 export interface TokenPurchaseRequest {
   userId: string;
@@ -48,10 +58,8 @@ export interface FestivalVendorInfo {
 }
 
 class FestivalTokenService {
-  private prisma: PrismaClient;
-
   constructor() {
-    this.prisma = new PrismaClient();
+    // No need for client initialization with Mongoose
   }
 
   // ============================================
@@ -60,15 +68,15 @@ class FestivalTokenService {
 
   async createWallet(userId: string): Promise<any> {
     try {
-      const wallet = await this.prisma.digitalWallet.create({
-        data: {
-          userId,
-          tokenBalance: 0,
-          currency: 'EUR',
-          isActive: true,
-          dailySpendLimit: 100,
-        },
+      const wallet = new DigitalWallet({
+        userId: new mongoose.Types.ObjectId(userId),
+        tokenBalance: 0,
+        currency: 'EUR',
+        isActive: true,
+        dailySpendLimit: 100,
       });
+
+      await wallet.save();
 
       logger.info(`Digital wallet created for user ${userId}`);
       return wallet;
@@ -80,9 +88,7 @@ class FestivalTokenService {
 
   async getWalletBalance(userId: string): Promise<WalletBalance> {
     try {
-      let wallet = await this.prisma.digitalWallet.findUnique({
-        where: { userId },
-      });
+      let wallet = await DigitalWallet.findOne({ userId: new mongoose.Types.ObjectId(userId) });
 
       // Create wallet if doesn't exist
       if (!wallet) {
@@ -95,28 +101,33 @@ class FestivalTokenService {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const dailySpending = await this.prisma.tokenTransaction.aggregate({
-        where: {
-          walletId: wallet.id,
-          type: 'SPENDING',
-          createdAt: {
-            gte: today,
-            lt: tomorrow,
+      const dailySpending = await TokenTransaction.aggregate([
+        {
+          $match: {
+            walletId: wallet._id,
+            type: 'SPENDING',
+            createdAt: {
+              $gte: today,
+              $lt: tomorrow,
+            },
           },
         },
-        _sum: {
-          amount: true,
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: '$amount' },
+          },
         },
-      });
+      ]);
 
-      const dailySpentToday = Number(dailySpending._sum.amount || 0);
-      const canSpend = dailySpentToday < Number(wallet.dailySpendLimit);
+      const dailySpentToday = dailySpending[0]?.totalAmount || 0;
+      const canSpend = dailySpentToday < wallet.dailySpendLimit;
 
       return {
-        tokenBalance: Number(wallet.tokenBalance),
+        tokenBalance: wallet.tokenBalance,
         currency: wallet.currency,
         dailySpentToday,
-        dailyLimit: Number(wallet.dailySpendLimit),
+        dailyLimit: wallet.dailySpendLimit,
         canSpend,
       };
     } catch (error) {

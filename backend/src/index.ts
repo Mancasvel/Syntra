@@ -11,6 +11,7 @@ import { config } from '@/config';
 import { logger } from '@/utils/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import { notFoundHandler } from '@/middleware/notFoundHandler';
+import { connectDB } from '@/models';
 
 // Routes
 import authRoutes from '@/routes/auth';
@@ -20,6 +21,7 @@ import nfcRoutes from '@/routes/nfc';
 import analyticsRoutes from '@/routes/analytics';
 import productRoutes from '@/routes/products';
 import orderRoutes from '@/routes/orders';
+import festivalTokenRoutes from '@/routes/festivalTokens';
 
 // Services
 import { SocketService } from '@/services/socketService';
@@ -106,6 +108,7 @@ app.use(`${API_PREFIX}/nfc`, nfcRoutes);
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
 app.use(`${API_PREFIX}/products`, productRoutes);
 app.use(`${API_PREFIX}/orders`, orderRoutes);
+app.use(`${API_PREFIX}/festival-tokens`, festivalTokenRoutes);
 
 // ============================================
 // WEBSOCKETS
@@ -158,15 +161,29 @@ process.on('SIGINT', () => {
 
 const PORT = config.PORT || 3001;
 
-server.listen(PORT, () => {
-  logger.info(`🚀 Syntra Backend running on port ${PORT}`);
-  logger.info(`📊 Environment: ${config.NODE_ENV}`);
-  logger.info(`🔗 API Base URL: http://localhost:${PORT}${API_PREFIX}`);
-  logger.info(`⚡ WebSocket server ready`);
-  
-  if (config.NODE_ENV === 'development') {
-    logger.info(`📖 API Documentation: http://localhost:${PORT}/docs`);
+// Initialize database connection and start server
+const startServer = async () => {
+  try {
+    // Connect to MongoDB Atlas
+    await connectDB();
+    
+    server.listen(PORT, () => {
+      logger.info(`🚀 Syntra Backend running on port ${PORT}`);
+      logger.info(`📊 Environment: ${config.NODE_ENV}`);
+      logger.info(`🔗 API Base URL: http://localhost:${PORT}${API_PREFIX}`);
+      logger.info(`⚡ WebSocket server ready`);
+      logger.info(`🍃 MongoDB Atlas connected`);
+      
+      if (config.NODE_ENV === 'development') {
+        logger.info(`📖 API Documentation: http://localhost:${PORT}/docs`);
+      }
+    });
+  } catch (error) {
+    logger.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
-});
+};
+
+startServer();
 
 export { app, server, io };

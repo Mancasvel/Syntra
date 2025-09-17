@@ -1,7 +1,7 @@
 {
   "name": "syntra-backend",
   "version": "1.0.0",
-  "description": "Syntra Backend API - Node.js + Express + PostgreSQL",
+  "description": "Syntra Backend API - Node.js + Express + MongoDB Atlas",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.ts",
@@ -12,11 +12,8 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:seed": "ts-node src/seeds/index.ts",
+    "db:connect": "ts-node src/scripts/testConnection.ts"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -36,8 +33,8 @@
     "axios": "^1.5.0",
     "openai": "^4.0.0",
     "mqtt": "^5.0.0",
-    "@prisma/client": "^5.2.0",
-    "prisma": "^5.2.0",
+    "mongoose": "^8.0.0",
+    "@revenuecat/purchases-typescript-sdk": "^1.0.0",
     "winston": "^3.10.0",
     "express-rate-limit": "^6.10.0",
     "express-validator": "^7.0.1"
@@ -62,9 +59,7 @@
     "@types/jest": "^29.5.4",
     "ts-jest": "^29.1.1",
     "supertest": "^6.3.3",
-    "@types/supertest": "^2.0.12"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "@types/supertest": "^2.0.12",
+    "@types/mongoose": "^5.11.97"
   }
 }

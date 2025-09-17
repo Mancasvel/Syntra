@@ -1,7 +1,7 @@
 {
   "name": "syntra-frontend",
   "version": "1.0.0",
-  "description": "Syntra Frontend - React Dashboard B2B/B2C",
+  "description": "Syntra Frontend - React Dashboard with MongoDB Atlas integration",
   "private": true,
   "scripts": {
     "dev": "next dev",

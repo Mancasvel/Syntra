@@ -73,7 +73,7 @@ syntra/
 
 ### Backend
 - **Node.js + Express + TypeScript**: API REST escalable
-- **PostgreSQL + Prisma**: Base de datos con ORM moderno
+- **MongoDB Atlas + Mongoose**: Base de datos NoSQL en la nube
 - **Redis**: Cache y sesiones en tiempo real
 - **Socket.io**: Comunicación WebSocket
 - **RevenueCat**: Suscripciones y pagos
@@ -106,14 +106,15 @@ syntra/
 - **Docker + Docker Compose**: Containerización completa
 - **Jest**: Testing con 70% coverage mínimo
 - **GitHub Actions**: CI/CD automatizado
-- **AWS/Vercel**: Hosting y escalabilidad
-- **Nginx**: Reverse proxy y load balancing
+- **Vercel**: Hosting serverless y escalabilidad automática
+- **MongoDB Atlas**: Base de datos escalable en la nube
 
 ## 🚀 Inicio Rápido
 
 ### Prerrequisitos
 - **Node.js 18+** - [Descargar aquí](https://nodejs.org/)
-- **Docker & Docker Compose** - [Descargar aquí](https://www.docker.com/)
+- **MongoDB Atlas Account** - [Crear cuenta gratuita](https://www.mongodb.com/atlas)
+- **Vercel Account** - [Crear cuenta gratuita](https://vercel.com)
 - **Git** - [Descargar aquí](https://git-scm.com/)
 
 ### Instalación Automática (Recomendada)
@@ -127,22 +128,44 @@ cd syntra
 ```
 
 ### Instalación Manual
+
+#### 1. Configurar MongoDB Atlas
+```bash
+# Crear cluster en MongoDB Atlas
+# Crear usuario de base de datos
+# Obtener connection string
+# Configurar network access (IP whitelist)
+```
+
+#### 2. Configurar aplicación
 ```bash
 # Configurar variables de entorno
 cp env.example .env
-# Editar .env con tus configuraciones
+
+# Editar .env con tus configuraciones:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/syntra_db
+# REVENUECAT_API_KEY=tu-api-key
+# OPENAI_API_KEY=tu-openai-key
 
 # Instalar dependencias
 npm run install:all
 
-# Iniciar servicios Docker
-npm run docker:up
-
-# Configurar base de datos
-npm run db:setup
+# Probar conexión a MongoDB Atlas
+cd backend && npm run db:connect
 
 # Iniciar aplicación completa
 npm run dev:all
+```
+
+#### 3. Deploy a Vercel
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
+
+# Configurar variables de entorno en Vercel dashboard
 ```
 
 ### URLs Disponibles
@@ -150,7 +173,7 @@ Una vez iniciado, podrás acceder a:
 - **🖥️ Dashboard Web**: http://localhost:3000
 - **📱 App Móvil**: http://localhost:19006 (Expo)
 - **🔧 API Backend**: http://localhost:3001
-- **📊 Base de Datos**: localhost:5432 (PostgreSQL)
+- **🍃 MongoDB Atlas**: Panel web de MongoDB
 - **🗄️ Redis**: localhost:6379
 
 ## 🎯 Funcionalidades Completas
@@ -300,25 +323,44 @@ npm run test:watch           # Desarrollo continuo
 
 ### **Variables de Entorno Requeridas**
 ```bash
+# MongoDB Atlas
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/syntra_db?retryWrites=true&w=majority
+DATABASE_URL=mongodb+srv://username:password@cluster.mongodb.net/syntra_db?retryWrites=true&w=majority
+
 # RevenueCat (Suscripciones)
 REVENUECAT_API_KEY=sk_your-secret-key
 REVENUECAT_WEBHOOK_SECRET=webhook-secret
 
-# Base de datos
-DATABASE_URL=postgresql://user:pass@host:5432/syntra
+# Redis (opcional para desarrollo local)
 REDIS_URL=redis://host:6379
 
 # APIs externas
 OPENAI_API_KEY=sk-your-openai-key
+JWT_SECRET=your-super-secret-jwt-key
+
+# Frontend
+NEXT_PUBLIC_API_URL=https://your-app.vercel.app
+NEXT_PUBLIC_REVENUECAT_API_KEY=pk_your-public-key
 ```
 
-### **Docker Production**
+### **Vercel Production Deploy**
 ```bash
-# Build para producción
-npm run docker:build
+# Deploy automático desde Git
+git push origin main
 
-# Deploy con variables de entorno
-docker-compose -f docker-compose.prod.yml up -d
+# O deploy manual
+vercel --prod
+
+# Configurar variables de entorno en Vercel Dashboard:
+# Settings → Environment Variables → Add
+```
+
+### **Docker Development**
+```bash
+# Solo para desarrollo local
+npm run docker:up
+
+# La producción usa Vercel serverless
 ```
 
 ## 💰 Modelo de Negocio
