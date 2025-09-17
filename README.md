@@ -103,11 +103,11 @@ syntra/
 - **Analytics**: Métricas de suscripciones
 
 ### DevOps & Testing
-- **Docker + Docker Compose**: Containerización completa
 - **Jest**: Testing con 70% coverage mínimo
 - **GitHub Actions**: CI/CD automatizado
 - **Vercel**: Hosting serverless y escalabilidad automática
 - **MongoDB Atlas**: Base de datos escalable en la nube
+- **Serverless Architecture**: Zero DevOps, auto-scaling
 
 ## 🚀 Inicio Rápido
 
@@ -355,12 +355,15 @@ vercel --prod
 # Settings → Environment Variables → Add
 ```
 
-### **Docker Development**
+### **Desarrollo Local Directo**
 ```bash
-# Solo para desarrollo local
-npm run docker:up
+# Desarrollo sin Docker (más simple y rápido)
+npm run dev
 
-# La producción usa Vercel serverless
+# Todo funciona directamente:
+# - Backend: Node.js + MongoDB Atlas
+# - Frontend: Next.js dev server
+# - Mobile: Expo dev server
 ```
 
 ## 💰 Modelo de Negocio

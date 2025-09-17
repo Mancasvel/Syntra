@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# SYNTRA - SCRIPT DE CONFIGURACIÓN AUTOMÁTICA
+# SYNTRA - SCRIPT DE CONFIGURACIÓN SERVERLESS
 # ============================================
 
 set -e  # Salir si hay algún error
@@ -34,8 +34,9 @@ print_error() {
 check_command() {
     if ! command -v $1 &> /dev/null; then
         print_error "$1 no está instalado. Por favor, instálalo primero."
-        exit 1
+        return 1
     fi
+    return 0
 }
 
 # Banner de bienvenida
@@ -48,21 +49,19 @@ cat << "EOF"
   |____/ \__, |_| |_|_|   \__|_|  \__,_|
          |___/                          
                                         
-  🚀 Configuración Automática de Syntra
+  🚀 Configuración Serverless de Syntra
   
 EOF
 echo -e "${NC}"
 
-print_status "Iniciando configuración de Syntra..."
+print_status "Iniciando configuración serverless de Syntra..."
 
 # Verificar prerrequisitos
 print_status "Verificando prerrequisitos..."
 
-check_command "node"
-check_command "npm"
-check_command "docker"
-check_command "docker-compose"
-check_command "git"
+check_command "node" || exit 1
+check_command "npm" || exit 1
+check_command "git" || exit 1
 
 # Verificar versiones
 NODE_VERSION=$(node --version | cut -d'v' -f2)
@@ -79,6 +78,12 @@ print_status "Configurando variables de entorno..."
 if [ ! -f .env ]; then
     cp env.example .env
     print_success "Archivo .env creado desde plantilla"
+    print_warning "IMPORTANTE: Configura tu MongoDB Atlas URI en .env"
+    echo -e "${BLUE}   1. Crea cuenta en https://mongodb.com/atlas${NC}"
+    echo -e "${BLUE}   2. Crea cluster gratuito (M0)${NC}"
+    echo -e "${BLUE}   3. Crea usuario de base de datos${NC}"
+    echo -e "${BLUE}   4. Configura network access (0.0.0.0/0)${NC}"
+    echo -e "${BLUE}   5. Copia connection string a MONGODB_URI en .env${NC}"
 else
     print_warning "Archivo .env ya existe, no se sobrescribirá"
 fi
@@ -103,145 +108,46 @@ cd mobile && npm install && cd ..
 
 print_success "Dependencias instaladas ✓"
 
-# Configurar Docker
-print_status "Configurando servicios Docker..."
+# Instalar herramientas de desarrollo
+print_status "Instalando herramientas de desarrollo..."
 
-# Detener servicios existentes si están corriendo
-docker-compose down 2>/dev/null || true
-
-# Construir e iniciar servicios
-docker-compose up -d --build
-
-# Esperar a que los servicios estén listos
-print_status "Esperando a que los servicios estén listos..."
-sleep 30
-
-# Verificar que los servicios estén corriendo
-if ! docker-compose ps | grep -q "Up"; then
-    print_error "Algunos servicios Docker no están corriendo correctamente"
-    docker-compose logs
-    exit 1
-fi
-
-print_success "Servicios Docker iniciados ✓"
-
-# Configurar base de datos
-print_status "Configurando base de datos..."
-
-# Esperar a que PostgreSQL esté listo
-max_attempts=30
-attempt=0
-while [ $attempt -lt $max_attempts ]; do
-    if docker-compose exec -T postgres pg_isready -U syntra_user -d syntra; then
-        break
-    fi
-    attempt=$((attempt + 1))
-    sleep 2
-done
-
-if [ $attempt -eq $max_attempts ]; then
-    print_error "PostgreSQL no está respondiendo después de 60 segundos"
-    exit 1
-fi
-
-# Ejecutar migraciones y seed
-cd backend
-npx prisma migrate dev --name init
-npx prisma db seed
-cd ..
-
-print_success "Base de datos configurada ✓"
-
-# Verificar que todo esté funcionando
-print_status "Verificando configuración..."
-
-# Verificar backend
-if curl -f http://localhost:3001/health > /dev/null 2>&1; then
-    print_success "Backend está respondiendo ✓"
+# Instalar Vercel CLI si no existe
+if ! check_command "vercel"; then
+    print_status "Instalando Vercel CLI..."
+    npm install -g vercel
+    print_success "Vercel CLI instalado ✓"
 else
-    print_warning "Backend no está respondiendo en el puerto 3001"
+    print_success "Vercel CLI ya está disponible ✓"
 fi
 
-# Crear archivos adicionales si no existen
-print_status "Creando archivos de configuración adicionales..."
+# Verificar conexión a MongoDB Atlas (si está configurado)
+print_status "Verificando configuración de MongoDB Atlas..."
 
-# .gitignore global si no existe
-if [ ! -f .gitignore ]; then
-cat > .gitignore << 'EOF'
-# Dependencies
-node_modules/
-*/node_modules/
-
-# Environment variables
-.env
-.env.local
-.env.production
-.env.staging
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Build outputs
-dist/
-build/
-.next/
-out/
-
-# Database
-*.sqlite
-*.db
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Docker
-.docker/
-
-# Expo
-.expo/
-expo-env.d.ts
-
-# Temporary files
-tmp/
-temp/
-EOF
-    print_success "Archivo .gitignore creado"
+if grep -q "mongodb+srv://" .env; then
+    print_status "Probando conexión a MongoDB Atlas..."
+    cd backend
+    if npm run db:connect; then
+        print_success "Conexión a MongoDB Atlas exitosa ✓"
+    else
+        print_warning "No se pudo conectar a MongoDB Atlas. Verifica tu MONGODB_URI en .env"
+    fi
+    cd ..
+else
+    print_warning "MongoDB Atlas URI no configurado en .env"
+    print_status "Configura MONGODB_URI después de crear tu cluster en MongoDB Atlas"
 fi
 
 # Crear script de inicio rápido
 cat > start.sh << 'EOF'
 #!/bin/bash
-echo "🚀 Iniciando Syntra..."
-docker-compose up -d
-echo "⏳ Esperando servicios..."
-sleep 10
+echo "🚀 Iniciando Syntra (Modo Serverless)..."
+echo "⏳ Iniciando servicios de desarrollo..."
 npm run dev &
 echo "✅ Syntra está corriendo!"
 echo "🌐 Frontend: http://localhost:3000"
 echo "📱 Mobile: http://localhost:19006"  
 echo "🔧 API: http://localhost:3001"
+echo "🍃 Database: MongoDB Atlas (Cloud)"
 EOF
 chmod +x start.sh
 
@@ -253,36 +159,48 @@ echo -e "${GREEN}============================================"
 echo -e "✅ SYNTRA CONFIGURADO EXITOSAMENTE"
 echo -e "============================================${NC}"
 echo
-echo -e "${BLUE}🌐 URLs disponibles:${NC}"
+echo -e "${BLUE}🌐 URLs de desarrollo:${NC}"
 echo "   Frontend:  http://localhost:3000"
 echo "   Mobile:    http://localhost:19006"
 echo "   API:       http://localhost:3001"
-echo "   Database:  localhost:5432"
+echo "   Database:  MongoDB Atlas (Cloud)"
 echo
-echo -e "${BLUE}👤 Usuarios de prueba:${NC}"
-echo "   Organizador: admin@syntra.com / admin123"
-echo "   Asistente:   user@syntra.com / user123"
+echo -e "${BLUE}☁️ Infraestructura:${NC}"
+echo "   Database:  MongoDB Atlas (Serverless)"
+echo "   Hosting:   Vercel (Edge Functions)"
+echo "   Storage:   Vercel Blob (Opcional)"
 echo
-echo -e "${BLUE}🚀 Para iniciar el desarrollo:${NC}"
-echo "   npm run dev:all"
+echo -e "${BLUE}🚀 Para iniciar desarrollo:${NC}"
+echo "   npm run dev"
+echo
+echo -e "${BLUE}☁️ Para deploy a producción:${NC}"
+echo "   vercel --prod"
 echo
 echo -e "${BLUE}📱 Para la app móvil:${NC}"
 echo "   cd mobile && npm run ios     # iOS Simulator"
 echo "   cd mobile && npm run android # Android Emulator"
 echo "   cd mobile && npm run web     # Web Browser"
 echo
-echo -e "${BLUE}🐳 Comandos Docker útiles:${NC}"
-echo "   npm run docker:up    # Iniciar servicios"
-echo "   npm run docker:down  # Detener servicios"
-echo "   docker-compose logs  # Ver logs"
+echo -e "${BLUE}🧪 Para ejecutar tests:${NC}"
+echo "   npm run test"
+echo "   npm run test:coverage"
 echo
 echo -e "${BLUE}📚 Documentación:${NC}"
-echo "   docs/QUICK_START.md  # Guía de inicio rápido"
-echo "   docs/NFC_GUIDE.md    # Guía completa de NFC"
+echo "   README.md            # Guía completa"
+echo "   docs/QUICK_START.md  # Inicio rápido"
+echo "   docs/NFC_GUIDE.md    # Guía de NFC"
 echo
-echo -e "${YELLOW}⚠️  Recuerda:${NC}"
-echo "   - Configurar variables de entorno en .env"
-echo "   - Habilitar NFC en dispositivos físicos"
-echo "   - Usar HTTPS en producción"
+echo -e "${YELLOW}⚠️  Próximos pasos:${NC}"
+echo "   1. Configurar MongoDB Atlas URI en .env"
+echo "   2. Ejecutar: npm run dev"
+echo "   3. Abrir http://localhost:3000"
+echo "   4. Para producción: vercel --prod"
+echo
+echo -e "${YELLOW}💡 Beneficios del stack serverless:${NC}"
+echo "   ✅ Escalabilidad automática"
+echo "   ✅ Costos optimizados (pay-as-you-scale)"
+echo "   ✅ Deploy global en segundos"
+echo "   ✅ Backup automático"
+echo "   ✅ Zero DevOps"
 echo
 echo -e "${GREEN}¡Listo para crear experiencias de eventos inolvidables! 🎉${NC}"
