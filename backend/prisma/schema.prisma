@@ -44,6 +44,10 @@ model User {
   interactions     Interaction[]
   orders           Order[]
   
+  // Festival Tokens (NUEVA FUNCIONALIDAD)
+  digitalWallet    DigitalWallet?
+  festivalPasses   FestivalPass[]
+  
   @@map("users")
 }
 
@@ -135,6 +139,12 @@ model Event {
   analytics     EventAnalytics[]
   products      Product[]
   
+  // Festival Tokens (NUEVA FUNCIONALIDAD)
+  festivalVendors   FestivalVendor[]
+  tokenTransactions TokenTransaction[]
+  festivalSpending  FestivalSpending[]
+  festivalPasses    FestivalPass[]
+  
   @@map("events")
 }
 
@@ -187,6 +197,9 @@ model NFCDevice {
   
   // Relaciones
   interactions Interaction[]
+  
+  // Festival Tokens (NUEVA FUNCIONALIDAD)
+  festivalSpending FestivalSpending[]
   
   @@map("nfc_devices")
 }
@@ -454,4 +467,247 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+// ============================================
+// FESTIVAL TOKENS SYSTEM (NUEVA FUNCIONALIDAD)
+// ============================================
+
+model DigitalWallet {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Balance de tokens
+  tokenBalance     Decimal @default(0)
+  currency         String  @default("EUR")
+  
+  // Configuración del wallet
+  isActive         Boolean @default(true)
+  dailySpendLimit  Decimal @default(100)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones
+  tokenPurchases   TokenPurchase[]
+  tokenTransactions TokenTransaction[]
+  festivalSpending  FestivalSpending[]
+  
+  @@map("digital_wallets")
+}
+
+model TokenPurchase {
+  id        String @id @default(cuid())
+  walletId  String
+  wallet    DigitalWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  // Información de la compra
+  amount           Decimal
+  tokenAmount      Decimal
+  currency         String  @default("EUR")
+  exchangeRate     Decimal @default(1) // EUR to tokens
+  
+  // Información de pago
+  paymentMethod    PaymentMethod
+  paymentId        String? // RevenueCat/Stripe transaction ID
+  cardLast4        String?
+  
+  // Estado
+  status           TokenPurchaseStatus @default(PENDING)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  completedAt DateTime?
+  
+  @@map("token_purchases")
+}
+
+model TokenTransaction {
+  id          String @id @default(cuid())
+  walletId    String
+  wallet      DigitalWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  // Información de la transacción
+  type        TokenTransactionType
+  amount      Decimal
+  description String?
+  
+  // Contexto
+  eventId     String?
+  event       Event? @relation(fields: [eventId], references: [id])
+  vendorId    String?
+  vendor      FestivalVendor? @relation(fields: [vendorId], references: [id])
+  
+  // Metadata
+  metadata    Json?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  @@map("token_transactions")
+}
+
+model FestivalVendor {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  
+  // Información del vendor
+  type        VendorType
+  category    String // "food", "drinks", "merchandise", "services"
+  
+  // Configuración
+  acceptsTokens   Boolean @default(true)
+  tokenRate       Decimal @default(1) // 1 token = X EUR
+  
+  // Ubicación en el festival
+  eventId     String?
+  event       Event? @relation(fields: [eventId], references: [id])
+  location    String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones
+  products    VendorProduct[]
+  transactions TokenTransaction[]
+  spending    FestivalSpending[]
+  
+  @@map("festival_vendors")
+}
+
+model VendorProduct {
+  id        String @id @default(cuid())
+  vendorId  String
+  vendor    FestivalVendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  // Información del producto
+  name        String
+  description String?
+  category    String
+  
+  // Precios
+  priceTokens Decimal
+  priceEur    Decimal?
+  
+  // Configuración
+  isAvailable Boolean @default(true)
+  stock       Int?
+  
+  // Imágenes
+  images      String[]
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones
+  spending  FestivalSpending[]
+  
+  @@map("vendor_products")
+}
+
+model FestivalSpending {
+  id        String @id @default(cuid())
+  walletId  String
+  wallet    DigitalWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  // Información de la compra
+  vendorId    String
+  vendor      FestivalVendor @relation(fields: [vendorId], references: [id])
+  productId   String?
+  product     VendorProduct? @relation(fields: [productId], references: [id])
+  
+  // Transacción
+  tokenAmount Decimal
+  quantity    Int @default(1)
+  
+  // Contexto
+  eventId     String
+  event       Event @relation(fields: [eventId], references: [id])
+  
+  // Método de pago (NFC tap)
+  deviceId    String?
+  nfcDevice   NFCDevice? @relation(fields: [deviceId], references: [id])
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  @@map("festival_spending")
+}
+
+model FestivalPass {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Información del pase
+  type          PassType
+  tokenBalance  Decimal @default(0) // Tokens específicos del festival
+  
+  // Configuración
+  isActive      Boolean @default(true)
+  canReload     Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  activatedAt DateTime?
+  expiresAt   DateTime?
+  
+  @@unique([userId, eventId])
+  @@map("festival_passes")
+}
+
+// ============================================
+// ENUMS PARA FESTIVAL TOKENS
+// ============================================
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  APPLE_PAY
+  GOOGLE_PAY
+  BANK_TRANSFER
+}
+
+enum TokenPurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TokenTransactionType {
+  PURCHASE      // Compra de tokens
+  SPENDING      // Gasto en festival
+  REFUND        // Reembolso
+  TRANSFER      // Transferencia entre usuarios
+  REWARD        // Recompensa por logros
+  BONUS         // Bonus del festival
+}
+
+enum VendorType {
+  FOOD_TRUCK
+  BAR
+  MERCHANDISE
+  SERVICES
+  GAMES
+  EXPERIENCES
+}
+
+enum PassType {
+  GENERAL_ADMISSION
+  VIP
+  BACKSTAGE
+  PRESS
+  ARTIST
+  STAFF
 }
