@@ -1,0 +1,457 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USUARIOS Y AUTENTICACIÓN
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  avatar    String?
+  phone     String?
+  role      UserRole @default(ATTENDEE)
+  
+  // Configuración de usuario
+  preferences Json?
+  isActive    Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLogin DateTime?
+  
+  // Relaciones
+  organizerProfile OrganizerProfile?
+  attendeeProfile  AttendeeProfile?
+  eventRegistrations EventRegistration[]
+  nfcDevices       NFCDevice[]
+  achievements     UserAchievement[]
+  connections      Connection[] @relation("UserConnections")
+  connectedBy      Connection[] @relation("ConnectedByUser")
+  interactions     Interaction[]
+  orders           Order[]
+  
+  @@map("users")
+}
+
+model OrganizerProfile {
+  id          String @id @default(cuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  company     String
+  website     String?
+  description String?
+  
+  // Configuración de negocio
+  stripeAccountId String?
+  
+  // Eventos organizados
+  events Event[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("organizer_profiles")
+}
+
+model AttendeeProfile {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bio      String?
+  company  String?
+  position String?
+  linkedin String?
+  twitter  String?
+  
+  // Configuración de networking
+  networkingStatus NetworkingStatus @default(AVAILABLE)
+  interests        String[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("attendee_profiles")
+}
+
+// ============================================
+// EVENTOS
+// ============================================
+
+model Event {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  
+  // Información del evento
+  startDate   DateTime
+  endDate     DateTime
+  timezone    String
+  location    String
+  venue       String?
+  capacity    Int?
+  
+  // Configuración
+  isPublic    Boolean     @default(true)
+  status      EventStatus @default(DRAFT)
+  
+  // Branding
+  logo        String?
+  bannerImage String?
+  primaryColor String?
+  
+  // Configuración NFC y gamificación
+  nfcEnabled      Boolean @default(true)
+  gamificationEnabled Boolean @default(true)
+  
+  // Organizador
+  organizerId String
+  organizer   OrganizerProfile @relation(fields: [organizerId], references: [id])
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones
+  registrations EventRegistration[]
+  nfcDevices    NFCDevice[]
+  achievements  Achievement[]
+  interactions  Interaction[]
+  analytics     EventAnalytics[]
+  products      Product[]
+  
+  @@map("events")
+}
+
+model EventRegistration {
+  id      String             @id @default(cuid())
+  eventId String
+  event   Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  status  RegistrationStatus @default(PENDING)
+  
+  // Información de registro
+  registeredAt DateTime @default(now())
+  checkedInAt  DateTime?
+  
+  // Configuración personalizada
+  preferences Json?
+  
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+// ============================================
+// NFC Y DISPOSITIVOS
+// ============================================
+
+model NFCDevice {
+  id       String      @id @default(cuid())
+  deviceId String      @unique // ID físico del dispositivo NFC
+  type     DeviceType  @default(WRISTBAND)
+  
+  // Configuración del dispositivo
+  isActive Boolean @default(true)
+  battery  Int?    // Porcentaje de batería si aplica
+  
+  // Asignación
+  eventId String?
+  event   Event?  @relation(fields: [eventId], references: [id])
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id])
+  
+  // Datos programados en el NFC
+  nfcData Json?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastSync  DateTime?
+  
+  // Relaciones
+  interactions Interaction[]
+  
+  @@map("nfc_devices")
+}
+
+model Interaction {
+  id        String          @id @default(cuid())
+  type      InteractionType
+  
+  // Participantes
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  eventId   String
+  event     Event           @relation(fields: [eventId], references: [id])
+  deviceId  String?
+  device    NFCDevice?      @relation(fields: [deviceId], references: [id])
+  
+  // Datos de la interacción
+  data      Json?
+  location  String? // Coordenadas o zona del evento
+  
+  // Timestamp
+  createdAt DateTime @default(now())
+  
+  @@map("interactions")
+}
+
+// ============================================
+// GAMIFICACIÓN
+// ============================================
+
+model Achievement {
+  id          String @id @default(cuid())
+  name        String
+  description String
+  icon        String?
+  
+  // Configuración
+  points      Int     @default(0)
+  isHidden    Boolean @default(false)
+  
+  // Condiciones para desbloquear (JSON)
+  conditions Json
+  
+  // Evento asociado
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones
+  userAchievements UserAchievement[]
+  
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String @id @default(cuid())
+  userId        String
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  // Información del desbloqueo
+  unlockedAt DateTime @default(now())
+  progress   Json?    // Para logros con progreso
+  
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model Connection {
+  id          String @id @default(cuid())
+  
+  // Usuarios conectados
+  userId      String
+  user        User   @relation("UserConnections", fields: [userId], references: [id])
+  connectedId String
+  connected   User   @relation("ConnectedByUser", fields: [connectedId], references: [id])
+  
+  // Metadata de la conexión
+  strength    Int      @default(1) // Fuerza de la conexión (interacciones)
+  firstMet    DateTime @default(now())
+  lastContact DateTime @default(now())
+  
+  // Contexto
+  eventContext String? // En qué evento se conocieron
+  notes        String?
+  
+  @@unique([userId, connectedId])
+  @@map("connections")
+}
+
+// ============================================
+// E-COMMERCE Y PRODUCTOS
+// ============================================
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  
+  // Configuración del producto
+  type        ProductType
+  price       Decimal
+  currency    String      @default("EUR")
+  
+  // Inventario
+  stock       Int?
+  isActive    Boolean     @default(true)
+  
+  // Personalización
+  customizable Boolean    @default(false)
+  options      Json?      // Opciones de personalización
+  
+  // Imágenes
+  images      String[]
+  
+  // Evento asociado (opcional para productos específicos)
+  eventId     String?
+  event       Event?      @relation(fields: [eventId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relaciones
+  orderItems  OrderItem[]
+  
+  @@map("products")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique
+  
+  // Cliente
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  
+  // Información del pedido
+  status      OrderStatus @default(PENDING)
+  total       Decimal
+  currency    String      @default("EUR")
+  
+  // Información de envío
+  shippingAddress Json?
+  trackingNumber  String?
+  
+  // Pagos
+  stripePaymentId String?
+  paidAt          DateTime?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones
+  items OrderItem[]
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  
+  quantity        Int
+  unitPrice       Decimal
+  customization   Json?   // Datos de personalización
+  
+  @@map("order_items")
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+model EventAnalytics {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Métricas
+  date             DateTime
+  totalAttendees   Int      @default(0)
+  activeUsers      Int      @default(0)
+  interactions     Int      @default(0)
+  connections      Int      @default(0)
+  achievementsUnlocked Int  @default(0)
+  
+  // Engagement por zona
+  zoneData Json?
+  
+  // Datos adicionales
+  metadata Json?
+  
+  @@unique([eventId, date])
+  @@map("event_analytics")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  ATTENDEE
+  ORGANIZER
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  CHECKED_IN
+}
+
+enum DeviceType {
+  WRISTBAND
+  BADGE
+  STICKER
+  CARD
+}
+
+enum InteractionType {
+  NFC_TAP
+  CONNECTION_MADE
+  ACHIEVEMENT_UNLOCKED
+  CHECK_IN
+  ZONE_VISIT
+  PURCHASE
+}
+
+enum NetworkingStatus {
+  AVAILABLE
+  BUSY
+  DO_NOT_DISTURB
+}
+
+enum ProductType {
+  NFC_WRISTBAND
+  NFC_BADGE
+  NFC_STICKER
+  MERCHANDISE
+  EVENT_PACK
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}

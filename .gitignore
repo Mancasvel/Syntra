@@ -1,0 +1,404 @@
+# ============================================
+# SYNTRA - GITIGNORE COMPLETO
+# ============================================
+
+# ============================================
+# DEPENDENCIAS Y NODE MODULES
+# ============================================
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ============================================
+# VARIABLES DE ENTORNO Y CONFIGURACIÓN
+# ============================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.example.local
+
+# Archivos de configuración sensibles
+config/local.json
+config/production.json
+config/staging.json
+secrets.json
+
+# ============================================
+# LOGS Y ARCHIVOS TEMPORALES
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+
+# ============================================
+# BUILD Y DISTRIBUCIÓN
+# ============================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+
+# Webpack bundles
+*.bundle.js
+*.bundle.css
+
+# ============================================
+# BASES DE DATOS Y STORAGE
+# ============================================
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+
+# PostgreSQL
+*.dump
+*.sql
+
+# Redis dumps
+dump.rdb
+
+# ============================================
+# TESTING
+# ============================================
+# Jest
+.jest/
+jest-coverage/
+coverage/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ============================================
+# FRONTEND ESPECÍFICO
+# ============================================
+# Next.js
+.next/
+out/
+
+# React
+build/
+.eslintcache
+
+# Storybook
+storybook-static/
+.storybook/public/
+
+# ============================================
+# MOBILE ESPECÍFICO (REACT NATIVE / EXPO)
+# ============================================
+# Expo
+.expo/
+.expo-shared/
+expo-env.d.ts
+web-build/
+
+# React Native
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+
+# iOS
+ios/build/
+ios/Pods/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/Podfile.lock
+
+# Metro
+.metro-health-check*
+metro.config.js.bak
+
+# ============================================
+# BACKEND ESPECÍFICO
+# ============================================
+# Prisma
+prisma/migrations/dev.db*
+prisma/dev.db*
+
+# Uploads y archivos temporales
+uploads/
+temp/
+tmp/
+
+# ============================================
+# DOCKER
+# ============================================
+.docker/
+docker-compose.override.yml
+.dockerignore
+
+# ============================================
+# SISTEMAS OPERATIVOS
+# ============================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# EDITORES E IDEs
+# ============================================
+# VSCode
+.vscode/
+!.vscode/settings.json.example
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains
+.idea/
+*.swp
+*.swo
+*~
+
+# Vim
+*.swp
+*.swo
+*.swn
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# ============================================
+# SERVICIOS Y APIS EXTERNAS
+# ============================================
+# AWS
+.aws/
+aws-exports.js
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Vercel
+.vercel/
+
+# Netlify
+.netlify/
+
+# ============================================
+# CERTIFICADOS Y KEYS
+# ============================================
+*.pem
+*.key
+*.crt
+*.p12
+*.keystore
+*.jks
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# ============================================
+# ARCHIVOS DE RESPALDO Y TEMPORALES
+# ============================================
+*.bak
+*.backup
+*.tmp
+*.temp
+*.old
+*.orig
+*.save
+*.swp
+*.swo
+
+# Archivos comprimidos
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ============================================
+# DOCUMENTACIÓN GENERADA
+# ============================================
+docs/api/
+docs/coverage/
+typedoc/
+jsdoc/
+
+# ============================================
+# MONITOREO Y ANALYTICS
+# ============================================
+# Sentry
+.sentryclirc
+
+# New Relic
+newrelic.js
+
+# ============================================
+# HERRAMIENTAS DE DESARROLLO
+# ============================================
+# ESLint
+.eslintcache
+
+# Prettier
+.prettierignore
+
+# Stylelint
+.stylelintcache
+
+# Husky
+.husky/_/
+
+# ============================================
+# ARCHIVOS ESPECÍFICOS DE SYNTRA
+# ============================================
+# Archivos de configuración local de desarrollo
+syntra-config.local.json
+local-settings.json
+
+# Archivos de prueba con datos sensibles
+test-data/real-users.json
+test-data/production-backup.sql
+
+# Logs específicos de NFC
+nfc-logs/
+device-logs/
+
+# Archivos de upload de testing
+uploads/test/
+temp-uploads/
+
+# ============================================
+# ARCHIVOS QUE SÍ QUEREMOS INCLUIR
+# ============================================
+# Mantener archivos de ejemplo
+!.env.example
+!config/example.json
+!uploads/.gitkeep
+!logs/.gitkeep
+
+# Mantener archivos de configuración de Docker
+!docker-compose.yml
+!Dockerfile
+!.dockerignore.example
+
+# Mantener archivos de configuración de CI/CD
+!.github/
+!.gitlab-ci.yml
+
+# ============================================
+# REGLAS ESPECÍFICAS POR DIRECTORIO
+# ============================================
+# Backend
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/logs/*
+!backend/logs/.gitkeep
+backend/temp/*
+!backend/temp/.gitkeep
+
+# Frontend
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Mobile
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+
+# Scripts
+scripts/local-*
+scripts/production-*
+!scripts/setup.sh
+!scripts/deploy.sh
+
+# ============================================
+# ARCHIVOS GRANDES Y BINARIOS
+# ============================================
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wav
+*.mp3
+*.flac
+
+# Imágenes grandes (mantener las de ejemplo pequeñas)
+*.psd
+*.ai
+*.sketch
+
+# Fonts (excepto las necesarias)
+fonts/*.otf
+fonts/*.woff2
+!fonts/inter.*
+!fonts/poppins.*

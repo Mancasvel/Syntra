@@ -1,0 +1,129 @@
+{
+  "expo": {
+    "name": "Syntra",
+    "slug": "syntra-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0ea5e9"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.syntra.mobile",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NFCReaderUsageDescription": "Esta app usa NFC para conectar con otros asistentes del evento y desbloquear experiencias.",
+        "NSCameraUsageDescription": "Usamos la cámara para escanear códigos QR y capturar momentos del evento.",
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrarte personas y actividades cerca de ti en el evento.",
+        "NSMicrophoneUsageDescription": "El micrófono se usa para grabar notas de voz y mensajes para otros asistentes.",
+        "NSPhotoLibraryUsageDescription": "Accedemos a tu galería para que puedas compartir fotos del evento."
+      },
+      "associatedDomains": [
+        "applinks:syntra.com"
+      ]
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0ea5e9"
+      },
+      "package": "com.syntra.mobile",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.NFC",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.ACCESS_BLUETOOTH_SCAN",
+        "android.permission.ACCESS_BLUETOOTH_ADVERTISE"
+      ],
+      "intentFilters": [
+        {
+          "action": "android.nfc.action.NDEF_DISCOVERED",
+          "category": [
+            "android.intent.category.DEFAULT"
+          ],
+          "data": {
+            "mimeType": "application/vnd.syntra.nfc"
+          }
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Inter-Regular.ttf",
+            "./assets/fonts/Inter-Medium.ttf",
+            "./assets/fonts/Inter-SemiBold.ttf",
+            "./assets/fonts/Inter-Bold.ttf",
+            "./assets/fonts/Poppins-Regular.ttf",
+            "./assets/fonts/Poppins-Medium.ttf",
+            "./assets/fonts/Poppins-SemiBold.ttf",
+            "./assets/fonts/Poppins-Bold.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0ea5e9",
+          "sounds": [
+            "./assets/sounds/achievement.wav",
+            "./assets/sounds/connection.wav",
+            "./assets/sounds/notification.wav"
+          ]
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Syntra usa tu ubicación para mostrarte experiencias personalizadas durante el evento."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Syntra necesita acceso a la cámara para escanear códigos QR y capturar momentos."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-eas-project-id"
+      },
+      "apiUrl": "https://api.syntra.com",
+      "socketUrl": "https://api.syntra.com",
+      "environment": "production"
+    },
+    "owner": "syntra-team"
+  }
+}
