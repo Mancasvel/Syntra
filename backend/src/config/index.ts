@@ -23,8 +23,8 @@ interface Config {
   
   // APIs Externas
   OPENAI_API_KEY?: string;
-  STRIPE_SECRET_KEY?: string;
-  STRIPE_PUBLISHABLE_KEY?: string;
+  REVENUECAT_API_KEY?: string;
+  REVENUECAT_WEBHOOK_SECRET?: string;
   
   // AWS
   AWS_ACCESS_KEY_ID?: string;
@@ -78,8 +78,8 @@ export const config: Config = {
   
   // APIs Externas
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-  STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+  REVENUECAT_API_KEY: process.env.REVENUECAT_API_KEY,
+  REVENUECAT_WEBHOOK_SECRET: process.env.REVENUECAT_WEBHOOK_SECRET,
   
   // AWS
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
